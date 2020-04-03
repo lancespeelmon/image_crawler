@@ -15,7 +15,7 @@ def find_img_tags(soup: BeautifulSoup):
     hits: List[str] = []
     for img in soup.find_all('img'):
         src: str = img.get('src')
-        if "/wanted/" in src:
+        if "/wanted/" in src:  # TODO improve this filter
             hits.append(src)
     return hits
 
@@ -59,7 +59,7 @@ PAGE = requests.get(URL)
 
 SOUP: BeautifulSoup = BeautifulSoup(PAGE.content, 'html.parser')
 
-# print(soup.prettify())
+# print(SOUP.prettify())
 
 print(f"found title:    {SOUP.title.string}")
 
