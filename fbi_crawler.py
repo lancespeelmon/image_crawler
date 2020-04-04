@@ -12,20 +12,17 @@ from logger.logger import get_logger
 def find_img_tags(soup: BeautifulSoup):
     ''' Find most wanted images from fbi.gov website. '''
 
-    LOGGER.debug("find_img_tags(soup)")
-
     hits: List[str] = []
     for img in soup.find_all('img'):
         src: str = img.get('src')
         if "/wanted/" in src:  # TODO improve this filter
             hits.append(src)
+            LOGGER.debug("add hit: %s", src)
     return hits
 
 
 def guess_extension(content_type: str):
     ''' Guess the file extension based on MIME content-type '''
-
-    LOGGER.debug("guess_extension(%s)", content_type)
 
     return mimetypes.guess_extension(content_type)
 
@@ -33,21 +30,19 @@ def guess_extension(content_type: str):
 def download_image(url: str):
     ''' Downloand an image file from a URL '''
 
-    LOGGER.debug("download_image(%s)", url)
-
-    print(f"download_image: {url}")
     regex = '''https://www.fbi.gov/wanted/topten/([0-9A-Za-z-]+)/@@images/image/preview'''
     filename: str = None
     match = re.search(regex, url)
     if match:
         filename = match.group(1)
     else:
-        LOGGER.debug("Could not determine filename", url)
+        LOGGER.warning("Could not determine filename for: %s", url)
         filename = str(uuid.uuid4())
     try:
         r = requests.get(url, allow_redirects=True)
         ext = guess_extension(r.headers.get('content-type'))
         filename = f"{filename}{ext}"
+        LOGGER.debug("filename = %s", filename)
         file = open(f"output/{filename}", 'wb')
         file.write(r.content)
         file.close()
@@ -64,9 +59,9 @@ PAGE = requests.get(URL)
 
 SOUP: BeautifulSoup = BeautifulSoup(PAGE.content, 'html.parser')
 
-# print(SOUP.prettify())
+# LOGGER.info(SOUP.prettify())
 
-print(f"found title:    {SOUP.title.string}")
+LOGGER.info("found title: %s", SOUP.title.string)
 
 IMG_LINKS = find_img_tags(SOUP)
 for url in IMG_LINKS:

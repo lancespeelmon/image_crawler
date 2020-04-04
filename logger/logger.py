@@ -1,6 +1,6 @@
-import os
 import logging
-from logging.config import dictConfig
+import os
+import sys
 
 
 def get_logger():
@@ -23,47 +23,40 @@ class SingletonType(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(SingletonType, cls).__call__(*args, **kwargs)
+            cls._instances[cls] = super(
+                SingletonType, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
 
 class LoggingWrapper(object, metaclass=SingletonType):
     _logger = None
-    _config = {
-        "version": 1,
-        "filters": {
-            "LessThanFilter": {
-                "()": _LessThanFilter,
-                "exclusive_maximum": logging.ERROR
-            }
-        },
-        "handlers": {
-            "stdout": {
-                "level": "DEBUG",
-                "stream": "ext://sys.stdout",
-                "class": "logging.StreamHandler",
-                "formatter": "precise",
-                "filters": ["LessThanFilter"]
-            },
-            "stderr": {
-                "level": "ERROR",
-                "stream": "ext://sys.stderr",
-                "class": "logging.StreamHandler",
-                "formatter": "precise",
-            },
-        },
-        "loggers": {"console": {"handlers": ["stdout", "stderr"]}},
-        "formatters": {
-            "precise": {
-                "format": "%(levelname)s|%(name)s|%(filename)s:%(lineno)s|%(funcName)s| %(message)s"
-            }
-        },
-        "root": {"handlers": ["stdout", "stderr"], "level": os.environ.get("LOG_LEVEL", "INFO")},
-    }
 
     def __init__(self):
-        dictConfig(self._config)
+        formatter = logging.Formatter(
+            fmt='%(levelname)s|%(name)s|%(filename)s:%(lineno)s|%(funcName)s| %(message)s')
+
+        # Get the root logger
         self._logger = logging.getLogger()
+
+        # Note that the root logger is created with level WARNING
+        self._logger.setLevel(logging.NOTSET)
+
+        std_out = logging.StreamHandler(sys.stdout)
+        # Read LOG_LEVEL from environment; default to INFO
+        log_level: str = os.environ.get("LOG_LEVEL", "INFO")
+        if log_level.upper() == "DEBUG":
+            std_out.setLevel(logging.DEBUG)
+        else:
+            std_out.setLevel(logging.INFO)
+        # Filter all messages below WARNING level
+        std_out.addFilter(_LessThanFilter(logging.WARNING))
+        std_out.setFormatter(formatter)
+        self._logger.addHandler(std_out)
+
+        std_err = logging.StreamHandler(sys.stderr)
+        std_err.setLevel(logging.WARNING)
+        std_err.setFormatter(formatter)
+        self._logger.addHandler(std_err)
 
     def get_logger(self):
         return self._logger
