@@ -43,9 +43,8 @@ def download_image(url: str):
         ext = guess_extension(r.headers.get('content-type'))
         filename = f"{filename}{ext}"
         LOGGER.debug("filename = %s", filename)
-        file = open(f"output/{filename}", 'wb')
-        file.write(r.content)
-        file.close()
+        with open(f"output/{filename}", 'wb') as file:
+            file.write(r.content)
     except Exception as e:
         LOGGER.error(f"error downloading: {filename}", e)
 
