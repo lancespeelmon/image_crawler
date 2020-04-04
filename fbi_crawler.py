@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
-import logging
 import mimetypes
 import re
 import requests
 import uuid
 from typing import List
 from bs4 import BeautifulSoup
+from logger.logger import get_logger
 
 
 def find_img_tags(soup: BeautifulSoup):
     ''' Find most wanted images from fbi.gov website. '''
+
+    LOGGER.debug("find_img_tags(soup)")
 
     hits: List[str] = []
     for img in soup.find_all('img'):
@@ -23,11 +25,15 @@ def find_img_tags(soup: BeautifulSoup):
 def guess_extension(content_type: str):
     ''' Guess the file extension based on MIME content-type '''
 
+    LOGGER.debug("guess_extension(%s)", content_type)
+
     return mimetypes.guess_extension(content_type)
 
 
 def download_image(url: str):
     ''' Downloand an image file from a URL '''
+
+    LOGGER.debug("download_image(%s)", url)
 
     print(f"download_image: {url}")
     regex = '''https://www.fbi.gov/wanted/topten/([0-9A-Za-z-]+)/@@images/image/preview'''
@@ -49,8 +55,7 @@ def download_image(url: str):
         LOGGER.error(f"error downloading: {filename}", e)
 
 
-LOGGER = logging.getLogger(__file__)
-LOGGER.setLevel(logging.DEBUG)
+LOGGER = get_logger()
 
 mimetypes.init()
 
