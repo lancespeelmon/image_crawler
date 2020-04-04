@@ -39,11 +39,11 @@ def download_image(url: str):
         LOGGER.warning("Could not determine filename for: %s", url)
         filename = str(uuid.uuid4())
     try:
-        r = requests.get(url, allow_redirects=True)
+        r = SESSION.get(url, allow_redirects=True)
         ext = guess_extension(r.headers.get('content-type'))
-        filename = f"{filename}{ext}"
-        LOGGER.debug("filename = %s", filename)
-        with open(f"output/{filename}", 'wb') as file:
+        destination = f"output/{filename}{ext}"
+        LOGGER.info("write file: %s", destination)
+        with open(destination, 'wb') as file:
             file.write(r.content)
     except Exception as e:
         LOGGER.error(f"error downloading: {filename}", e)
@@ -54,7 +54,8 @@ LOGGER = get_logger()
 mimetypes.init()
 
 URL = 'https://www.fbi.gov/wanted/topten'
-PAGE = requests.get(URL)
+SESSION = requests.Session()
+PAGE = SESSION.get(URL)
 
 SOUP: BeautifulSoup = BeautifulSoup(PAGE.content, 'html.parser')
 
