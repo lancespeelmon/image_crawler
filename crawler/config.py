@@ -6,6 +6,7 @@ from typing import List
 
 from .fbi_crawler import FbiCrawler
 from .html_crawler import HtmlCrawler
+from .interpol_crawler import InterpolCrawler
 
 FBI_UNIT = {
     'crawler': FbiCrawler,
@@ -20,7 +21,7 @@ FBI_UNIT = {
 }
 
 INTERPOL_UNIT = {
-    'crawler': HtmlCrawler,
+    'crawler': InterpolCrawler,
     'targets': [
         'https://www.interpol.int/en/How-we-work/Notices/View-Red-Notices',
     ],
@@ -47,6 +48,7 @@ class CrawlerConfig(metaclass=abc.ABCMeta):
         self._logger = logger
         self._crawlers[HtmlCrawler] = HtmlCrawler(logger)
         self._crawlers[FbiCrawler] = FbiCrawler(logger)
+        self._crawlers[InterpolCrawler] = InterpolCrawler(logger)
 
     @classmethod
     def logger(self) -> logging.Logger:
