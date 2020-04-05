@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import List
 
 from bs4 import BeautifulSoup
@@ -5,17 +6,20 @@ from bs4 import BeautifulSoup
 from .html_crawler import HtmlCrawler
 
 
-@HtmlCrawler.register
 class FbiCrawler(HtmlCrawler):
     """Inherits from HtmlCrawler."""
 
-    def find_img_tags(self, soup: BeautifulSoup):
+    def __init__(self, logger: Logger):
+        super().__init__(logger)
+
+    def find_img_tags(self, soup: BeautifulSoup, url):
         ''' Find wanted images from fbi.gov website. '''
 
         hits: List[str] = []
-        for img in soup.find_all('img'):
-            src: str = img.get('src')
-            if "/wanted/" in src:
-                hits.append(src)
-                self._logger.debug("add hit: %s", src)
+        results: List[str] = super().find_img_tags(soup, url)
+        for hit in results:
+            if "/wanted/" in hit:  # filter only wanted images
+                hits.append(hit)
+            else:
+                self._logger.debug("ignore hit: %s", hit)
         return hits

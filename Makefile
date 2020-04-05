@@ -29,7 +29,7 @@ test: clean-pyc
 	py.test --verbose --color=yes $(TEST_PATH)
 
 run:
-	LOG_LEVEL=$(LOG_LEVEL) python3 ./fbi_crawler.py
+	LOG_LEVEL=$(LOG_LEVEL) python3 ./sync_crawler.py
 
 docker-build:
 	docker build --tag="$(DOCKER_IMAGE):$(DOCKER_TAG)" .

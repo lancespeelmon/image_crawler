@@ -1,7 +1,6 @@
 import abc
+from logging import Logger
 from typing import List
-
-from logger.logger import get_logger
 
 
 class Crawler(metaclass=abc.ABCMeta):
@@ -13,8 +12,8 @@ class Crawler(metaclass=abc.ABCMeta):
 
     _logger = None
 
-    def __init__(self):
-        self._logger = get_logger()
+    def __init__(self, logger: Logger):
+        self._logger = logger
 
     @abc.abstractmethod
     def crawl(self, urls: List[str]) -> (int, List[Exception]):
