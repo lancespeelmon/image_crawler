@@ -6,9 +6,7 @@ from typing import List
 class Crawler(metaclass=abc.ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'crawl')
-                and callable(subclass.crawl)
-                or NotImplemented)
+        return callable(subclass.crawl) if hasattr(subclass, 'crawl') else NotImplemented
 
     _logger = None
 

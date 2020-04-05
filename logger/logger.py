@@ -7,7 +7,7 @@ def get_logger():
     return LoggingWrapper.__call__().get_logger()
 
 
-class _LessThanFilter(logging.Filter):
+class _LessThanFilter(logging.Filter):  # pylint: disable=R0903
 
     def __init__(self, exclusive_maximum, name=""):
         super(_LessThanFilter, self).__init__(name)
@@ -28,7 +28,7 @@ class SingletonType(type):
         return cls._instances[cls]
 
 
-class LoggingWrapper(object, metaclass=SingletonType):
+class LoggingWrapper(object, metaclass=SingletonType):  # pylint: disable=R0903
     _logger = None
 
     def __init__(self):

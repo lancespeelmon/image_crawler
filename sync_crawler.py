@@ -17,10 +17,10 @@ def worker(unit: dict):
         LOGGER.info("Downloaded %s files", files_downloaded)
         if exceptions:
             LOGGER.error("found %s errors!", len(exceptions))
-            for e in exceptions:
-                LOGGER.error(e)
-    except Exception as e:
-        raise e
+            for ex in exceptions:
+                LOGGER.error(ex)
+    except Exception as ex:
+        raise ex
 
 
 def main():

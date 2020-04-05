@@ -1,4 +1,3 @@
-from logging import Logger
 from typing import List
 
 from bs4 import BeautifulSoup
@@ -8,9 +7,6 @@ from .html_crawler import HtmlCrawler
 
 class FbiCrawler(HtmlCrawler):
     """Inherits from HtmlCrawler."""
-
-    def __init__(self, logger: Logger):
-        super().__init__(logger)
 
     def find_img_tags(self, soup: BeautifulSoup, url):
         ''' Find wanted images from fbi.gov website. '''

@@ -30,7 +30,7 @@ class HtmlCrawler(Crawler):
         mimetypes.init()
         self._session = Session()
 
-    def guess_file_extension(self, content_type: str):
+    def guess_file_extension(self, content_type: str):  # pylint: disable=R0201
         ''' Guess the file extension based on MIME content-type '''
 
         return mimetypes.guess_extension(content_type)
@@ -43,18 +43,18 @@ class HtmlCrawler(Crawler):
         # sha1 hash based on full img src url
         filename = hashlib.sha1(url.encode('utf-8')).hexdigest()
         try:
-            r = self._session.get(url, allow_redirects=True)
-            ext = self.guess_file_extension(r.headers.get('content-type'))
+            res = self._session.get(url, allow_redirects=True)
+            ext = self.guess_file_extension(res.headers.get('content-type'))
             if ext != ".svg":  # ignore svg files for now
                 destination = f"output/{filename}{ext}"
                 self._logger.info("write file: %s", destination)
                 with open(destination, 'wb') as file:
-                    file.write(r.content)
-        except Exception as e:
-            raise e
+                    file.write(res.content)
+        except Exception as ex:
+            raise ex
         return destination
 
-    def find_img_tags(self, soup: BeautifulSoup, url):
+    def find_img_tags(self, soup: BeautifulSoup, url):  # pylint: disable=R0201
         """Find all img tags in HTML and return src attribute."""
 
         if not url:
@@ -79,12 +79,12 @@ class HtmlCrawler(Crawler):
             page: Response = self._session.get(url)
             soup: BeautifulSoup = BeautifulSoup(page.content, 'html.parser')
             img_links: List[str] = self.find_img_tags(soup, url)
-            for url in img_links:
+            for img_url in img_links:
                 try:
-                    dest = self.download_file(url)
+                    dest = self.download_file(img_url)
                     if dest:
                         files_downloaded += 1
-                except Exception as e:
-                    exceptions.append(e)
-                    raise e
+                except Exception as ex:
+                    exceptions.append(ex)
+                    raise ex
         return(files_downloaded, exceptions)

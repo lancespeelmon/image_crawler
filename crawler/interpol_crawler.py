@@ -1,4 +1,3 @@
-from logging import Logger
 from typing import List
 
 from bs4 import BeautifulSoup
@@ -14,9 +13,6 @@ class InterpolCrawler(HtmlCrawler):
         "/bundles/interpolfront/",
         "/1/1/1/6/76111-12-eng-GB/RedNoticeEnLR.jpg",
     ]
-
-    def __init__(self, logger: Logger):
-        super().__init__(logger)
 
     def find_img_tags(self, soup: BeautifulSoup, url):
         """Find images from interpol.int website.

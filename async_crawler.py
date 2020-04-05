@@ -29,10 +29,10 @@ async def worker(name, queue):
         LOGGER.info("Downloaded %s files", files_downloaded)
         if exceptions:
             LOGGER.error("found %s errors!", len(exceptions))
-            for e in exceptions:
-                LOGGER.error(e.message, e)
-    except Exception as e:
-        raise e
+            for ex in exceptions:
+                LOGGER.error(ex.message, ex)
+    except Exception as ex:
+        raise ex
     finally:
         # Notify the queue that the "work item" has been processed.
         queue.task_done()
