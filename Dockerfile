@@ -2,8 +2,7 @@ FROM python:3
 
 WORKDIR /app
 
-ADD requirements.txt ./
-ADD fbi_crawler.py ./
+COPY . .
 
 RUN pip install -r requirements.txt
 RUN mkdir ./output

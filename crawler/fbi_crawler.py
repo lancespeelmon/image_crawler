@@ -1,5 +1,7 @@
 from typing import List
+
 from bs4 import BeautifulSoup
+
 from .html_crawler import HtmlCrawler
 
 

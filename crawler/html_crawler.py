@@ -1,9 +1,11 @@
 import mimetypes
 import re
-from requests import Response, Session
 import uuid
 from typing import List
+
 from bs4 import BeautifulSoup
+from requests import Response, Session
+
 from .crawler import Crawler
 
 

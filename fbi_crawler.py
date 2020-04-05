@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from logger.logger import get_logger
 from crawler.crawler import Crawler
 from crawler.fbi_crawler import FbiCrawler
+from logger.logger import get_logger
 
 LOGGER = get_logger()
 URLS = [
