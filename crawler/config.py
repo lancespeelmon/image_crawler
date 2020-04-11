@@ -17,6 +17,8 @@ FBI_UNIT = {
         # 'https://www.fbi.gov/wanted/seeking-information',
         # 'https://www.fbi.gov/wanted/parental-kidnappings',
         # 'https://www.fbi.gov/wanted/bank-robbers',
+        # 'https://www.fbi.gov/wanted/ecap',
+        # 'https://www.fbi.gov/wanted/vicap',
     ],
 }
 
