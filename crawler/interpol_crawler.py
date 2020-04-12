@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import List
 
 from bs4 import BeautifulSoup
@@ -15,6 +16,14 @@ class InterpolCrawler(HtmlCrawler):
         "/bundles/interpolfront/",
         "/1/1/1/6/76111-12-eng-GB/RedNoticeEnLR.jpg",
     ]
+    _options: Options = None
+    _driver = None
+
+    def __init__(self, logger: Logger):
+        super().__init__(logger)
+        self._options = Options()
+        self._options.headless = True
+        self._driver = webdriver.Chrome(options=self._options)
 
     def find_img_tags(self, soup: BeautifulSoup, url):
         """Find images from interpol.int website.
@@ -33,25 +42,11 @@ class InterpolCrawler(HtmlCrawler):
                 hits.append(hit)
         return hits
 
-    def crawl(self, urls: List[str]) -> (int, List[Exception]):
-        """Search the HTML for img tags."""
-
-        files_downloaded = 0
-        exceptions = []
-        options = Options()
-        options.headless = True
-        driver = webdriver.Chrome(options=options)
-        for url in urls:
-            self._logger.info("scrape: %s", url)
-            driver.get(url)
-            soup: BeautifulSoup = BeautifulSoup(driver.page_source, 'html.parser')
-            img_links: List[str] = self.find_img_tags(soup, url)
-            for img_url in img_links:
-                try:
-                    dest = self.download_file(img_url)
-                    if dest:
-                        files_downloaded += 1
-                except Exception as ex:
-                    exceptions.append(ex)
-                    raise ex
-        return(files_downloaded, exceptions)
+    def get_content(self, url: str) -> bytes:
+        """Download and return page content.
+        """
+        if not url:
+            raise ValueError("url is required")
+        self._logger.info("url: %s", url)
+        self._driver.get(url)
+        return self._driver.page_source

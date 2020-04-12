@@ -5,7 +5,7 @@ from typing import List
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
-from requests import Response, Session
+from requests import Session
 
 from .crawler import Crawler
 
@@ -75,6 +75,14 @@ class HtmlCrawler(Crawler):
                 hits.append(src)
         return hits
 
+    def get_content(self, url: str) -> bytes:
+        """Download and return page content.
+        """
+        if not url:
+            raise ValueError("url is required")
+        self._logger.info("url: %s", url)
+        return (self._session.get(url)).content
+
     def crawl(self, urls: List[str]) -> (int, List[Exception]):
         """Search the HTML for img tags."""
 
@@ -82,8 +90,8 @@ class HtmlCrawler(Crawler):
         exceptions = []
         for url in urls:
             self._logger.info("url: %s", url)
-            page: Response = self._session.get(url)
-            soup: BeautifulSoup = BeautifulSoup(page.content, 'html.parser')
+            content = self.get_content(url)
+            soup: BeautifulSoup = BeautifulSoup(content, 'html.parser')
             img_links: List[str] = self.find_img_tags(soup, url)
             for img_url in img_links:
                 try:
