@@ -14,6 +14,7 @@ class HtmlCrawler(Crawler):
     """Inherits from Crawler."""
 
     _session: Session = None
+    _ignore_file_types = [".svg"]
 
     @classmethod
     def __subclasshook__(cls, subclass):
@@ -33,7 +34,11 @@ class HtmlCrawler(Crawler):
     def guess_file_extension(self, content_type: str):  # pylint: disable=R0201
         ''' Guess the file extension based on MIME content-type '''
 
-        return mimetypes.guess_extension(content_type)
+        self._logger.debug("guess extension: %s", content_type)
+        ext: str = mimetypes.guess_extension(content_type, strict=False)
+        if not ext:
+            self._logger.warning("Could not determine file extension for: %s", content_type)
+        return ext
 
     def download_file(self, url: str) -> str:
         ''' Downloand a file from a URL '''
@@ -42,11 +47,12 @@ class HtmlCrawler(Crawler):
         destination: str = None
         # sha1 hash based on full img src url
         filename = hashlib.sha1(url.encode('utf-8')).hexdigest()
+        destination = "output/" + filename
         try:
             res = self._session.get(url, allow_redirects=True)
             ext = self.guess_file_extension(res.headers.get('content-type'))
-            if ext != ".svg":  # ignore svg files for now
-                destination = f"output/{filename}{ext}"
+            if ext not in self._ignore_file_types:
+                destination = (destination + ext) if ext else destination
                 self._logger.info("write file: %s", destination)
                 with open(destination, 'wb') as file:
                     file.write(res.content)
@@ -75,7 +81,7 @@ class HtmlCrawler(Crawler):
         files_downloaded = 0
         exceptions = []
         for url in urls:
-            self._logger.debug("url = %s", url)
+            self._logger.info("url: %s", url)
             page: Response = self._session.get(url)
             soup: BeautifulSoup = BeautifulSoup(page.content, 'html.parser')
             img_links: List[str] = self.find_img_tags(soup, url)
