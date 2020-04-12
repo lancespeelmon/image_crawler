@@ -1,2 +1,4 @@
+coverage==5.0.4
 flake8==3.7.9
+pytest==5.4.1
 python-language-server[all]==0.31.9

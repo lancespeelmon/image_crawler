@@ -2,7 +2,7 @@ DOCKER_IMAGE=web-crawler-whip
 DOCKER_TAG=latest
 HOST=127.0.0.1
 LOG_LEVEL=DEBUG
-TEST_PATH=./
+TEST_PATH=tests
 
 clean-pyc:
 	find . -name '*.pyc' -exec rm -rf {} \;
@@ -25,8 +25,9 @@ isort:
 lint:
 	flake8
 
-test: clean-pyc
-	py.test --verbose --color=yes $(TEST_PATH)
+test:
+	PYTHONPATH=$PYTHONPATH:./ coverage run --branch -m py.test $(TEST_PATH) && \
+	coverage report --fail-under=50
 
 run:
 	LOG_LEVEL=$(LOG_LEVEL) python3 ./sync_crawler.py
