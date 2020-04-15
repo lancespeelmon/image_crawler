@@ -26,8 +26,8 @@ lint:
 	flake8
 
 test:
-	PYTHONPATH=$PYTHONPATH:./ coverage run --branch -m py.test $(TEST_PATH) && \
-	coverage report --fail-under=50
+	PYTHONPATH=${PYTHONPATH}:./ coverage run --branch -m py.test -v $(TEST_PATH) && \
+	coverage report --fail-under=78 --skip-empty
 
 run:
 	LOG_LEVEL=$(LOG_LEVEL) python3 ./sync_crawler.py

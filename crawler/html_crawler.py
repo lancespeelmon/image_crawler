@@ -1,3 +1,5 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 import hashlib
 import mimetypes
 from logging import Logger
@@ -14,6 +16,7 @@ class HtmlCrawler(Crawler):
     """Inherits from Crawler."""
 
     _session: Session = None
+    _driver = None  # selenium webdriver
     _ignore_file_types = [".svg"]
 
     @classmethod
@@ -31,7 +34,13 @@ class HtmlCrawler(Crawler):
         mimetypes.init()
         self._session = Session()
 
-    def guess_file_extension(self, content_type: str):  # pylint: disable=R0201
+    def init_selenium(self):
+        if not self._driver:
+            driver_options = Options()
+            driver_options.headless = True
+            self._driver = webdriver.Chrome(options=driver_options)
+
+    def guess_file_extension(self, content_type: str) -> str:  # pylint: disable=R0201
         ''' Guess the file extension based on MIME content-type '''
 
         self._logger.debug("guess extension: %s", content_type)
@@ -60,39 +69,50 @@ class HtmlCrawler(Crawler):
             raise ex
         return destination
 
-    def find_img_tags(self, soup: BeautifulSoup, url):  # pylint: disable=R0201
+    def find_img_tags(self, soup: BeautifulSoup, url, ignore=None) -> List[str]:  # pylint: disable=R0201
         """Find all img tags in HTML and return src attribute."""
-
-        if not url:
-            raise ValueError("url is required!")
 
         hits: List[str] = []
         for img in soup.find_all('img'):
             src: str = urljoin(url, img.get('src'))
-            if not (src.startswith("data:image/svg+xml;")  # ignore svg for now
-                    or src.lower().endswith(".svg")
-                    ):
+            if ignore:
+                ignore_match = False
+                for ignore_pattern in ignore:
+                    # self._logger.debug("%s in %s: %s", ignore_pattern, img, ignore_pattern in img)
+                    if ignore_pattern in src:
+                        ignore_match = True
+                        break  # short circuit for loop
+                if ignore_match:
+                    self._logger.debug("ignore src: %s", src)
+                else:
+                    hits.append(src)
+            else:
                 hits.append(src)
         return hits
 
-    def get_content(self, url: str) -> bytes:
+    def get_content(self, url: str, render=False) -> bytes:
         """Download and return page content.
         """
-        if not url:
-            raise ValueError("url is required")
-        self._logger.info("url: %s", url)
-        return (self._session.get(url)).content
+        self._logger.info("get_content(%s, render=%s)", url, render)
+        content = None
+        if render:
+            self.init_selenium()
+            self._driver.get(url)
+            content = self._driver.page_source
+        else:
+            content = (self._session.get(url)).content
+        return content
 
-    def crawl(self, urls: List[str]) -> (int, List[Exception]):
+    def crawl(self, urls: List[str], render=False, ignore=None) -> (int, List[Exception]):
         """Search the HTML for img tags."""
 
         files_downloaded = 0
         exceptions = []
         for url in urls:
             self._logger.info("url: %s", url)
-            content = self.get_content(url)
+            content = self.get_content(url, render)
             soup: BeautifulSoup = BeautifulSoup(content, 'html.parser')
-            img_links: List[str] = self.find_img_tags(soup, url)
+            img_links: List[str] = self.find_img_tags(soup, url, ignore)
             for img_url in img_links:
                 try:
                     dest = self.download_file(img_url)

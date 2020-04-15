@@ -4,12 +4,11 @@ import multiprocessing
 from logging import Logger
 from typing import List
 
-from .fbi_crawler import FbiCrawler
 from .html_crawler import HtmlCrawler
-from .interpol_crawler import InterpolCrawler
 
 FBI_UNIT = {
-    'crawler': FbiCrawler,
+    'crawler': HtmlCrawler,
+    'render': False,
     'targets': [
         'https://www.fbi.gov/wanted/topten',
         # 'https://www.fbi.gov/wanted/terrorism',
@@ -20,13 +19,34 @@ FBI_UNIT = {
         # 'https://www.fbi.gov/wanted/ecap',
         # 'https://www.fbi.gov/wanted/vicap',
     ],
+    'image_ignore_patterns': [
+        'theme/images/fbibannerseal.png',
+    ],
 }
 
 INTERPOL_UNIT = {
-    'crawler': InterpolCrawler,
+    'crawler': HtmlCrawler,
+    'render': True,
     'targets': [
         'https://www.interpol.int/en/How-we-work/Notices/View-Red-Notices',
     ],
+    'image_ignore_patterns': ['images/arrow-down.svg',
+                              'images/arrow-up-stroke.svg',
+                              'images/socials/Facebook.svg',
+                              'images/socials/Twitter.svg',
+                              'images/socials/Youtube.svg',
+                              'images/socials/Instagram.svg',
+                              'images/socials/LinkedIn.svg',
+                              'images/socials/icon-Facebook.svg',
+                              'images/socials/icon-Twitter.svg',
+                              'interpolfront/images/rednotice',
+                              'interpolfront/images/photo-not-available',
+                              'interpolfront/images/logo-blanc',
+                              'interpolfront/images/logo-text-only',
+                              'images/1/1/1/6/76111-12-eng-GB/RedNoticeEnLR',
+                              'interpolfront/images/logo.png',
+                              'data:image/svg+xml',
+                              ]
 }
 
 
@@ -50,8 +70,6 @@ class CrawlerConfig(metaclass=abc.ABCMeta):
         self._logger = logger
         # register _all_ available Crawlers
         self._crawlers[HtmlCrawler] = HtmlCrawler(logger)
-        self._crawlers[FbiCrawler] = FbiCrawler(logger)
-        self._crawlers[InterpolCrawler] = InterpolCrawler(logger)
 
     def logger(self) -> logging.Logger:
         """Logger getter"""

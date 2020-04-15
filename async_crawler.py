@@ -25,7 +25,7 @@ async def worker(name, queue):
     try:
         loop = asyncio.get_event_loop()
         (files_downloaded, exceptions) = await loop.run_in_executor(
-            EXECUTOR, crawler.crawl, unit['targets'])
+            EXECUTOR, crawler.crawl, unit['targets'], render=unit['render'], ignore=unit['image_ignore_patterns'])
         LOGGER.info("Downloaded %s files", files_downloaded)
         if exceptions:
             LOGGER.error("found %s errors!", len(exceptions))

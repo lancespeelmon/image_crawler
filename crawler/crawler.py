@@ -11,8 +11,6 @@ class Crawler(metaclass=abc.ABCMeta):
     _logger = None
 
     def __init__(self, logger: Logger):
-        if not logger:
-            raise ValueError("logger is required")
         self._logger = logger
 
     def logger(self) -> Logger:
@@ -21,6 +19,6 @@ class Crawler(metaclass=abc.ABCMeta):
         return self._logger
 
     @abc.abstractmethod
-    def crawl(self, urls: List[str]) -> (int, List[Exception]):
+    def crawl(self, urls: List[str], ignore=None) -> (int, List[Exception]):
         """Crawl the list of URLs"""
         raise NotImplementedError

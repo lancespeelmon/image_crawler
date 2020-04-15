@@ -5,13 +5,12 @@ This module provides all of the generic and specific crawlers for
 various content sources like HTML (others coming soon?).
 
 Examples:
-    Sample class hierarchy: ``Crawler --> HtmlCrawler --> FbiCrawler``::
+    Sample class hierarchy: ``Crawler --> HtmlCrawler``::
 
         from crawler.crawler import Crawler
         from crawler.html_crawler import HtmlCrawler
-        from crawler.fbi_crawler import FbiCrawler
 
-        crawler: Crawler = FbiCrawler()
+        crawler: Crawler = HtmlCrawler()
 
 Todo:
     * For module TODOs

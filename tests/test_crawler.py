@@ -3,9 +3,8 @@ from logger.logger import get_logger
 
 
 def test_init():
-    logger = get_logger()
     try:
-        crawler = Crawler(logger)
+        crawler = Crawler(get_logger())
         assert not crawler, "crawler is abstract and should be allowed to be instantiated"
     except TypeError as type_err:
         assert type_err, "TypeError is expected; crawler is abstract"
