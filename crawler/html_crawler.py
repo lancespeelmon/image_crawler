@@ -1,5 +1,3 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 import hashlib
 import mimetypes
 from logging import Logger
@@ -8,6 +6,8 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 from requests import Session
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 from .crawler import Crawler
 

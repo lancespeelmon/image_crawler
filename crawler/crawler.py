@@ -19,6 +19,6 @@ class Crawler(metaclass=abc.ABCMeta):
         return self._logger
 
     @abc.abstractmethod
-    def crawl(self, urls: List[str], ignore=None) -> (int, List[Exception]):
+    def crawl(self, urls: List[str], render=False, ignore=None) -> (int, List[Exception]):
         """Crawl the list of URLs"""
         raise NotImplementedError

@@ -14,7 +14,7 @@ from logger.logger import get_logger
 
 LOGGER = get_logger()
 CONFIG = CrawlerConfig(LOGGER)
-CONCURRENCY = CONFIG.concurrency()
+CONCURRENCY = CONFIG.concurrency
 LOGGER.debug("concurrency = %s", CONCURRENCY)
 EXECUTOR = ThreadPoolExecutor(CONCURRENCY)
 
@@ -41,7 +41,7 @@ async def worker(name, queue):
 async def main():
     # push our units of work onto the queue
     queue = asyncio.Queue(maxsize=CONCURRENCY)
-    for unit in CONFIG.workload():
+    for unit in CONFIG.workload:
         queue.put_nowait(unit)
 
     tasks = []

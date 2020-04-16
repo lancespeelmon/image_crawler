@@ -71,20 +71,23 @@ class CrawlerConfig(metaclass=abc.ABCMeta):
         # register _all_ available Crawlers
         self._crawlers[HtmlCrawler] = HtmlCrawler(logger)
 
+    @property
     def logger(self) -> logging.Logger:
         """Logger getter"""
 
         return self._logger
 
+    @property
     def workload(self) -> List[dict]:  # pylint: disable=R0201
         """Get configured workload"""
 
         return [FBI_UNIT, INTERPOL_UNIT]
 
+    @property
     def concurrency(self) -> int:
         """Get recommended concurrency for execution."""
 
-        return min(len(self.workload()), multiprocessing.cpu_count())
+        return min(len(self.workload), multiprocessing.cpu_count())
 
     def crawler(self, _type: type) -> int:
         """Crawler factory for a given type."""

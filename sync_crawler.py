@@ -26,7 +26,7 @@ def worker(unit: dict):
 
 def main():
     started_at = time.monotonic()
-    for unit in CONFIG.workload():
+    for unit in CONFIG.workload:
         worker(unit)
     elasped_time = time.monotonic() - started_at
 
