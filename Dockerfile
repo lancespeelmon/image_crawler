@@ -7,4 +7,4 @@ COPY . .
 RUN pip install -r requirements.txt
 RUN mkdir ./output
 
-CMD [ "python", "./fbi_crawler.py" ]
+CMD [ "python3", "./sync_crawler.py" ]
