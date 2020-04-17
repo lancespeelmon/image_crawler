@@ -125,7 +125,7 @@ def mock_images(requests_mock):
 def test_init(logger, crawler):
     # happy path
     assert crawler, "crawler should not be None"
-    assert crawler.logger() is logger, "logger should be same as assigned"
+    assert crawler.logger is logger, "logger should be same as assigned"
 
     # illegal logger passed
     try:
