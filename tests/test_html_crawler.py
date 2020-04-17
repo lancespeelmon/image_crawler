@@ -185,8 +185,7 @@ def test_find_img_tags(configuration, crawler, expectations):
     for url in expectations.keys():
         soup: BeautifulSoup = BeautifulSoup(crawler.get_content(url), 'html.parser')
         img_links: List[str] = crawler.find_img_tags(soup, url, ignore=image_ignore_patterns)
-        assert len(img_links) > 0, "img_links length must be greater than 0"
-        assert img_links == expectations[url]['img_links'], 'img_links must match expectations'
+        assert list(img_links) == expectations[url]['img_links'], 'img_links must match expectations'
 
 
 def test_download_file(crawler, mock_images):
