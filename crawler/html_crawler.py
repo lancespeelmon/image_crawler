@@ -13,11 +13,10 @@ from .crawler import Crawler
 
 
 class HtmlCrawler(Crawler):
-    """Inherits from Crawler."""
-
+    """ Inherits from Crawler.
+    """
     _session: Session = None
     _driver = None  # selenium webdriver
-    _ignore_file_types = [".svg"]
 
     @classmethod
     def __subclasshook__(cls, subclass):
@@ -35,14 +34,16 @@ class HtmlCrawler(Crawler):
         self._session = Session()
 
     def init_selenium(self):
+        """ Initialize selenium webdriver.
+        """
         if not self._driver:
             driver_options = Options()
             driver_options.headless = True
             self._driver = webdriver.Chrome(options=driver_options)
 
     def guess_file_extension(self, content_type: str) -> str:  # pylint: disable=R0201
-        ''' Guess the file extension based on MIME content-type '''
-
+        """ Guess the file extension based on MIME content-type.
+        """
         self._logger.debug("guess extension: %s", content_type)
         ext: str = mimetypes.guess_extension(content_type, strict=False)
         if not ext:
@@ -50,8 +51,8 @@ class HtmlCrawler(Crawler):
         return ext
 
     def download_file(self, url: str) -> str:
-        ''' Downloand a file from a URL '''
-
+        """ Downloand a file from a URL.
+        """
         filename: str = None
         destination: str = None
         # sha1 hash based on full img src url
@@ -60,25 +61,23 @@ class HtmlCrawler(Crawler):
         try:
             res = self._session.get(url, allow_redirects=True)
             ext = self.guess_file_extension(res.headers.get('content-type'))
-            if ext not in self._ignore_file_types:
-                destination = (destination + ext) if ext else destination
-                self._logger.info("write file: %s", destination)
-                with open(destination, 'wb') as file:
-                    file.write(res.content)
+            destination = (destination + ext) if ext else destination
+            self._logger.info("write file: %s", destination)
+            with open(destination, 'wb') as file:
+                file.write(res.content)
         except Exception as ex:
             raise ex
         return destination
 
     def find_img_tags(self, soup: BeautifulSoup, url, ignore=None) -> List[str]:  # pylint: disable=R0201
-        """Find all img tags in HTML and return src attribute."""
-
+        """ Find all img tags in HTML and return src attribute.
+        """
         hits: List[str] = []
         for img in soup.find_all('img'):
             src: str = urljoin(url, img.get('src'))
             if ignore:
                 ignore_match = False
                 for ignore_pattern in ignore:
-                    # self._logger.debug("%s in %s: %s", ignore_pattern, img, ignore_pattern in img)
                     if ignore_pattern in src:
                         ignore_match = True
                         break  # short circuit for loop
@@ -91,7 +90,7 @@ class HtmlCrawler(Crawler):
         return hits
 
     def get_content(self, url: str, render=False) -> bytes:
-        """Download and return page content.
+        """ Download and return page content.
         """
         self._logger.info("get_content(%s, render=%s)", url, render)
         content = None
@@ -104,8 +103,8 @@ class HtmlCrawler(Crawler):
         return content
 
     def crawl(self, urls: List[str], render=False, ignore=None) -> (int, List[Exception]):
-        """Search the HTML for img tags."""
-
+        """ Search the HTML for img tags.
+        """
         files_downloaded = 0
         exceptions = []
         for url in urls:

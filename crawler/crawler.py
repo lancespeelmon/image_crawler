@@ -13,12 +13,14 @@ class Crawler(metaclass=abc.ABCMeta):
     def __init__(self, logger: Logger):
         self._logger = logger
 
+    @property
     def logger(self) -> Logger:
-        """Get logger instance
+        """ logger getter
         """
         return self._logger
 
     @abc.abstractmethod
     def crawl(self, urls: List[str], render=False, ignore=None) -> (int, List[Exception]):
-        """Crawl the list of URLs"""
+        """ Crawl the list of URLs.
+        """
         raise NotImplementedError
