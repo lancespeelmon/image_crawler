@@ -1,8 +1,8 @@
-# FBI Most Wanted Crawler
+# Python Image Crawler
 
-## Python Development Environment
+## Development Environment
 
-While you can use a global python environment, it is highly suggested you use
+While you _can_ use a global python environment, it is highly recommended you use
 a virtual python environment located in the `.venv` directory; for example:
 
 ```
