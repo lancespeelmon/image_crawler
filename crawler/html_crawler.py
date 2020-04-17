@@ -1,5 +1,6 @@
 import hashlib
 import mimetypes
+from functools import lru_cache
 from logging import Logger
 from typing import List
 from urllib.parse import urljoin
@@ -69,25 +70,25 @@ class HtmlCrawler(Crawler):
             raise ex
         return destination
 
+    @lru_cache(maxsize=1000)
+    def ignore_img(self, img_src: str, ignore: tuple) -> bool:
+        """ Returns true if the image source should be ignored.
+        """
+        matched = False
+        if ignore:
+            for ignore_pattern in ignore:
+                if ignore_pattern in img_src:
+                    matched = True
+                    break  # short circuit for loop
+        return matched
+
     def find_img_tags(self, soup: BeautifulSoup, url, ignore=None) -> List[str]:  # pylint: disable=R0201
         """ Find all img tags in HTML and return src attribute.
         """
-        hits: List[str] = []
         for img in soup.find_all('img'):
-            src: str = urljoin(url, img.get('src'))
-            if ignore:
-                ignore_match = False
-                for ignore_pattern in ignore:
-                    if ignore_pattern in src:
-                        ignore_match = True
-                        break  # short circuit for loop
-                if ignore_match:
-                    self._logger.debug("ignore src: %s", src)
-                else:
-                    hits.append(src)
-            else:
-                hits.append(src)
-        return hits
+            src: str = img.get('src')
+            if not self.ignore_img(src, tuple(ignore)):
+                yield urljoin(url, src)
 
     def get_content(self, url: str, render=False) -> bytes:
         """ Download and return page content.
