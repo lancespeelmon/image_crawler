@@ -14,7 +14,8 @@ def worker(unit: dict):
     crawler: Crawler = CONFIG.crawler(unit['crawler'])
     try:
         (files_downloaded, exceptions) = crawler.crawl(
-            unit['targets'], render=unit['render'], ignore=unit['image_ignore_patterns'])
+            unit['targets'], render=unit['render'], ignore=tuple(unit['image_ignore_patterns']),
+            follow_href=tuple(unit['follow_href_patterns']))
         LOGGER.info("Downloaded %s files", files_downloaded)
         if exceptions:
             LOGGER.error("found %s errors!", len(exceptions))

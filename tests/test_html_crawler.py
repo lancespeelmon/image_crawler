@@ -22,7 +22,7 @@ def configuration(logger):
 
 @pytest.fixture
 def crawler(logger):
-    return HtmlCrawler(logger)
+    return HtmlCrawler(logger, think_time=0)
 
 
 @pytest.fixture
@@ -98,6 +98,7 @@ def expectations(requests_mock):
     }
     # mock page content
     for url in expectations.keys():
+        requests_mock.head(url, headers={'content-type': 'text/html; charset=utf-8'})
         filename = (os.path.join(os.path.dirname(__file__), 'fixtures', quote(url, '')))
         with open(filename, 'r') as file:
             content = file.read()

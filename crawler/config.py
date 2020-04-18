@@ -19,6 +19,17 @@ FBI_UNIT = {
         # 'https://www.fbi.gov/wanted/ecap',
         # 'https://www.fbi.gov/wanted/vicap',
     ],
+    'follow_href_patterns': [
+        'wanted/topten',
+        'wanted/fugitives',
+        'wanted/terrorism',
+        'wanted/kidnap',
+        'wanted/seeking-information',
+        'wanted/parental-kidnappings',
+        'wanted/bank-robbers',
+        'wanted/ecap',
+        'wanted/vicap',
+    ],
     'image_ignore_patterns': [
         'theme/images/fbibannerseal.png',
     ],
@@ -81,7 +92,7 @@ class CrawlerConfig(metaclass=abc.ABCMeta):
     def workload(self) -> List[dict]:  # pylint: disable=R0201
         """ Get configured workload.
         """
-        return [FBI_UNIT, INTERPOL_UNIT]
+        return [FBI_UNIT]
 
     @property
     def concurrency(self) -> int:
