@@ -44,4 +44,4 @@ jobs:
       run: |
         pip install pytest
         PYTHONPATH=${PYTHONPATH}:./ coverage run --branch -m py.test -v $(TEST_PATH) && \
-        	coverage report --fail-under=78 --skip-empty
+        	coverage report --fail-under=66 --skip-empty
