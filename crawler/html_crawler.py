@@ -75,7 +75,8 @@ class HtmlCrawler(Crawler):
         """
         destination: str = None
         # sha1 hash based on full img src url
-        sha1_digest = hashlib.sha1(url.encode('utf-8')).hexdigest()
+        url_encoded = url.encode('utf-8')
+        sha1_digest = hashlib.sha1(url_encoded).hexdigest()
         destination = os.path.join(output, sha1_digest)
         try:
             time.sleep(random.randint(0, self.think_time))  # introduce some natural wait time
@@ -91,11 +92,11 @@ class HtmlCrawler(Crawler):
                 'is_redirect': res.is_redirect,
                 'links': res.links,
                 'reason': res.reason,
-                'md5': hashlib.md5(url.encode('utf-8')).hexdigest(),
+                'md5': hashlib.md5(url_encoded).hexdigest(),
                 'sha1': sha1_digest,
-                'sha256': hashlib.sha256(url.encode('utf-8')).hexdigest(),
-                'sha384': hashlib.sha384(url.encode('utf-8')).hexdigest(),
-                'sha512': hashlib.sha512(url.encode('utf-8')).hexdigest(),
+                'sha256': hashlib.sha256(url_encoded).hexdigest(),
+                'sha384': hashlib.sha384(url_encoded).hexdigest(),
+                'sha512': hashlib.sha512(url_encoded).hexdigest(),
             }
             destination = (destination + ext) if ext else destination
             self._logger.info("write file: %s", destination)
