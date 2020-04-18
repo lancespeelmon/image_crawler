@@ -1,4 +1,5 @@
 import hashlib
+import json
 import mimetypes
 import os
 import random
@@ -81,10 +82,23 @@ class HtmlCrawler(Crawler):
             time.sleep(random.randint(0, self.think_time))  # introduce some natural wait time
             res = self._session.get(url, headers=self.headers, allow_redirects=True)
             ext = self.guess_file_extension(res.headers.get('content-type'))
+            metadata_file = destination + '-metadata.json'
+            metadata = {
+                'url': res.url,
+                'headers': dict(res.headers),
+                'status_code': res.status_code,
+                'elasped_micros': str(res.elapsed.microseconds),
+                'is_permanent_redirect': res.is_permanent_redirect,
+                'is_redirect': res.is_redirect,
+                'links': res.links,
+                'reason': res.reason,
+            }
             destination = (destination + ext) if ext else destination
             self._logger.info("write file: %s", destination)
             with open(destination, 'wb') as file:
                 file.write(res.content)
+            with open(metadata_file, 'w') as file:
+                json.dump(metadata, file)
         except Exception as ex:
             raise ex
         return destination
