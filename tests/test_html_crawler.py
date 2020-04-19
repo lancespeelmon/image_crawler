@@ -133,7 +133,6 @@ def expectations(requests_mock):
     }
     # mock page content
     headers = {'content-type': 'text/html; charset=utf-8'}
-    bogus_content_type = {'content-type': 'text/unknown; charset=utf-8'}
     matcher = re.compile('.gov/|interpol.int/|.com/')
     for url in expectations.keys():
         requests_mock.head(url, headers=headers)
@@ -144,9 +143,9 @@ def expectations(requests_mock):
             expectations[url]['content'] = content.encode('utf-8')
             requests_mock.get(url, text=content, headers=headers)
             requests_mock.register_uri('HEAD', matcher, text=content, additional_matcher=match_request_url,
-                                       headers=bogus_content_type)
-            # requests_mock.register_uri('GET', matcher, text=content, additional_matcher=match_request_text,
-            #                            headers=headers)
+                                       headers=headers)
+            requests_mock.register_uri('GET', matcher, text=content, additional_matcher=match_request_url,
+                                       headers=headers)
     return expectations
 
 
