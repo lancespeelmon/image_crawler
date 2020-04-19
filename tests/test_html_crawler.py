@@ -198,3 +198,18 @@ def test_download_file(crawler, mock_images):
             jpeg = file.read()
             assert len(jpeg) > 0, "file must have data"
             assert jpeg == mock_images[url]['content'], "file must match source content"
+
+
+def test_follow_href(crawler):
+    follow_pattern = ('wanted/ecap', 'wanted/vicap')
+    retval = crawler.follow_href('https://www.fbi.gov/wanted/ecap/unknown-individual-jane-doe-37', follow_pattern)
+    assert retval, "URL should test true"
+    retval = crawler.follow_href('https://www.fbi.gov/wanted/vicap/unknown-individual-jane-doe-37', follow_pattern)
+    assert retval, "URL should test true"
+    retval = crawler.follow_href('https://www.fbi.gov/wanted/vicap/unknown-individual-jane-doe-37', None)
+    assert retval, "None follow_pattern should test true"
+
+    retval = crawler.follow_href('https://www.fbi.gov/wanted/seeking-info/john-doe', follow_pattern)
+    assert not retval, "URL should test false"
+    retval = crawler.follow_href('mailto:foo@bar.com', follow_pattern)
+    assert not retval, "mailto: should test false"

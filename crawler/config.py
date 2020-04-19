@@ -24,7 +24,7 @@ FBI_UNIT = {
         'wanted/fugitives',
         'wanted/terrorism',
         'wanted/kidnap',
-        'wanted/seeking-information',
+        'wanted/seeking-info',
         'wanted/parental-kidnappings',
         'wanted/bank-robbers',
         'wanted/ecap',
