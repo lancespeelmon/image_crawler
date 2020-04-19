@@ -6,35 +6,6 @@ from typing import List
 
 from .html_crawler import HtmlCrawler
 
-FBI_UNIT = {
-    'crawler': HtmlCrawler,
-    'render': False,
-    'targets': [
-        'https://www.fbi.gov/wanted/topten',
-        # 'https://www.fbi.gov/wanted/terrorism',
-        # 'https://www.fbi.gov/wanted/kidnap',
-        # 'https://www.fbi.gov/wanted/seeking-information',
-        # 'https://www.fbi.gov/wanted/parental-kidnappings',
-        # 'https://www.fbi.gov/wanted/bank-robbers',
-        # 'https://www.fbi.gov/wanted/ecap',
-        # 'https://www.fbi.gov/wanted/vicap',
-    ],
-    'follow_href_patterns': [
-        'wanted/topten',
-        'wanted/fugitives',
-        'wanted/terrorism',
-        'wanted/kidnap',
-        'wanted/seeking-information',
-        'wanted/parental-kidnappings',
-        'wanted/bank-robbers',
-        'wanted/ecap',
-        'wanted/vicap',
-    ],
-    'image_ignore_patterns': [
-        'theme/images/fbibannerseal.png',
-    ],
-}
-
 INTERPOL_UNIT = {
     'crawler': HtmlCrawler,
     'render': True,
@@ -77,10 +48,24 @@ class CrawlerConfig(metaclass=abc.ABCMeta):
     _logger = None
     _crawlers = {}
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger, max_depth=3, think_time=5):
         self._logger = logger
-        # register _all_ available Crawlers
-        self._crawlers[HtmlCrawler] = HtmlCrawler(logger)
+        self.fbi_unit = {
+            'targets': [
+                'https://www.fbi.gov/wanted/topten',
+            ],
+            'crawler': HtmlCrawler(self._logger, render=False, follow_href_patterns=[
+                'wanted/topten',
+                'wanted/fugitives',
+                'wanted/terrorism',
+                'wanted/kidnap',
+                'wanted/seeking-info',
+                'wanted/parental-kidnappings',
+                'wanted/bank-robbers',
+                'wanted/ecap',
+                'wanted/vicap',
+            ], ignore=['theme/images/fbibannerseal.png'], max_depth=max_depth, think_time=think_time),
+        }
 
     @property
     def logger(self) -> logging.Logger:
@@ -92,15 +77,10 @@ class CrawlerConfig(metaclass=abc.ABCMeta):
     def workload(self) -> List[dict]:  # pylint: disable=R0201
         """ Get configured workload.
         """
-        return [FBI_UNIT]
+        return [self.fbi_unit]
 
     @property
     def concurrency(self) -> int:
         """ Get recommended concurrency for workload execution.
         """
         return min(len(self.workload), multiprocessing.cpu_count())
-
-    def crawler(self, _type: type) -> int:
-        """ Crawler factory for a given type.
-        """
-        return self._crawlers.get(_type)

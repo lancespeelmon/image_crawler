@@ -3,7 +3,6 @@ from typing import List
 
 from crawler.config import CrawlerConfig
 from crawler.crawler import Crawler
-from crawler.html_crawler import HtmlCrawler
 from logger.logger import get_logger
 
 LOGGER = get_logger()
@@ -27,14 +26,8 @@ def test_workload():
     assert len(workload) > 0, "workload should have at least one item"
     crawler = workload[0]['crawler']
     assert crawler, "workload.crawler should not be None"
-    assert issubclass(crawler, Crawler), "crawler should be a subclass of Crawler"
+    assert isinstance(crawler, Crawler), "crawler should be a subclass of Crawler"
     targets = workload[0]['targets']
     assert targets, "workload.targets should not be None"
     assert isinstance(targets, List), "workload.targets should be a List"
     assert isinstance(targets[0], str), "workload.targets should have at least one String"
-
-
-def test_crawler():
-    crawler = CC.crawler(HtmlCrawler)
-    assert crawler, "crawler should not be None"
-    assert isinstance(crawler, Crawler), "crawler should be a Crawler"
