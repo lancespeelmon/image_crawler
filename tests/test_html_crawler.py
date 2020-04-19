@@ -5,6 +5,7 @@ from urllib.parse import quote
 
 import pytest
 from bs4 import BeautifulSoup
+from requests_mock.mocker import Mocker
 
 from crawler.config import CrawlerConfig
 from crawler.html_crawler import HtmlCrawler
@@ -56,7 +57,7 @@ def match_request_url(request) -> bool:
 
 
 @pytest.fixture
-def expectations(requests_mock):
+def expectations(requests_mock: Mocker):
     """ Loads the mock data from tests/fixtures/<url>
     """
     expectations = {
@@ -142,15 +143,15 @@ def expectations(requests_mock):
             assert len(content) > 0, "content mock must have data"
             expectations[url]['content'] = content.encode('utf-8')
             requests_mock.get(url, text=content, headers=headers)
-            requests_mock.register_uri('HEAD', matcher, text=content, additional_matcher=match_request_url,
-                                       headers=headers)
+            requests_mock.register_uri('HEAD', matcher, additional_matcher=match_request_url, headers=headers)
             requests_mock.register_uri('GET', matcher, text=content, additional_matcher=match_request_url,
                                        headers=headers)
+            # TODO add test coverage for 429 rate limit status_code with custom matcher
     return expectations
 
 
 @pytest.fixture
-def mock_images(requests_mock):
+def mock_images(requests_mock: Mocker):
     """ Loads the mock images from tests/fixtures/<image>
     """
     expectations = {}
