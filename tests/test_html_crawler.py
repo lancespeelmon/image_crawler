@@ -41,7 +41,11 @@ def expectations(requests_mock):
                           'https://www.fbi.gov/wanted/topten/bhadreshkumar-chetanbhai-patel/@@images/image/preview',
                           'https://www.fbi.gov/wanted/topten/alejandro-castillo/@@images/image/preview',
                           'https://www.fbi.gov/wanted/topten/arnoldo-jimenez/@@images/image/preview',
-                          'https://www.fbi.gov/wanted/topten/jason-derek-brown/@@images/image/preview']
+                          'https://www.fbi.gov/wanted/topten/jason-derek-brown/@@images/image/preview'],
+            'a_tags': ['https://www.fbi.gov/wanted/ecap',
+                       'https://www.fbi.gov/wanted/vicap',
+                       'https://www.fbi.gov/wanted/ecap',
+                       'https://www.fbi.gov/wanted/vicap'],
         },
         'https://www.interpol.int/en/How-we-work/Notices/View-Red-Notices': {
             'content': None,  # lazy loaded below
@@ -93,7 +97,8 @@ def expectations(requests_mock):
                           'https://www.interpol.int/bundles/interpolfront/images/rednotice_big.png',
                           'https://www.interpol.int/bundles/interpolfront/images/photo-not-available.png',
                           'https://www.interpol.int/bundles/interpolfront/images/rednotice.png',
-                          'https://www.interpol.int/bundles/interpolfront/images/logo-blanc.png']
+                          'https://www.interpol.int/bundles/interpolfront/images/logo-blanc.png'],
+            'a_tags': ['https://www.interpol.int/en/Crimes/Cybercrime'],
         },
     }
     # mock page content
@@ -213,3 +218,11 @@ def test_follow_href(crawler):
     assert not retval, "URL should test false"
     retval = crawler.follow_href('mailto:foo@bar.com', follow_pattern)
     assert not retval, "mailto: should test false"
+
+
+def test_find_a_tags(crawler: HtmlCrawler, expectations: dict):
+    follow_pattern = ('wanted/ecap', 'wanted/vicap', '/en/Crimes/Cybercrime')
+    for url in expectations.keys():
+        soup: BeautifulSoup = BeautifulSoup(crawler.get_content(url), 'html.parser')
+        a_tags = crawler.find_a_tags(soup, url, follow=follow_pattern)
+        assert expectations[url]['a_tags'] == list(a_tags), 'a_tags must match expectations'

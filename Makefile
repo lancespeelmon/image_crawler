@@ -27,7 +27,7 @@ lint:
 
 test:
 	PYTHONPATH=${PYTHONPATH}:./ coverage run --branch -m py.test -v $(TEST_PATH) && \
-	coverage report --fail-under=74 --skip-empty
+	coverage report --fail-under=77 --skip-empty
 
 run:
 	LOG_LEVEL=$(LOG_LEVEL) python3 ./sync_crawler.py
