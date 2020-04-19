@@ -1,4 +1,5 @@
 import os
+import re
 from typing import List
 from urllib.parse import quote
 
@@ -22,7 +23,36 @@ def configuration(logger):
 
 @pytest.fixture
 def crawler(logger):
-    return HtmlCrawler(logger, think_time=0)
+    image_ignore_patterns = ['theme/images/fbibannerseal.png',
+                             'images/arrow-down.svg',
+                             'images/arrow-up-stroke.svg',
+                             'images/socials/Facebook.svg',
+                             'images/socials/Twitter.svg',
+                             'images/socials/Youtube.svg',
+                             'images/socials/Instagram.svg',
+                             'images/socials/LinkedIn.svg',
+                             'images/socials/icon-Facebook.svg',
+                             'images/socials/icon-Twitter.svg',
+                             'data:image/svg+xml',
+                             ]
+    follow_patterns = ('wanted/ecap', 'wanted/vicap', '/en/Crimes/Cybercrime')
+    return HtmlCrawler(logger, think_time=0, follow_href_patterns=follow_patterns, ignore=image_ignore_patterns)
+
+
+@pytest.fixture
+def empty_ignore_crawler(logger):
+    follow_patterns = ('wanted/ecap', 'wanted/vicap', '/en/Crimes/Cybercrime')
+    return HtmlCrawler(logger, think_time=0, follow_href_patterns=follow_patterns)
+
+
+@pytest.fixture
+def empty_follow_crawler(logger):
+    return HtmlCrawler(logger, think_time=0, follow_href_patterns=[])
+
+
+def match_request_url(request) -> bool:
+    ignored = ['https://www.fbi.gov/wanted/topten', 'https://www.interpol.int/en/How-we-work/Notices/View-Red-Notices']
+    return request.url not in ignored
 
 
 @pytest.fixture
@@ -102,14 +132,21 @@ def expectations(requests_mock):
         },
     }
     # mock page content
+    headers = {'content-type': 'text/html; charset=utf-8'}
+    bogus_content_type = {'content-type': 'text/unknown; charset=utf-8'}
+    matcher = re.compile('.gov/|interpol.int/|.com/')
     for url in expectations.keys():
-        requests_mock.head(url, headers={'content-type': 'text/html; charset=utf-8'})
+        requests_mock.head(url, headers=headers)
         filename = (os.path.join(os.path.dirname(__file__), 'fixtures', quote(url, '')))
         with open(filename, 'r') as file:
             content = file.read()
             assert len(content) > 0, "content mock must have data"
             expectations[url]['content'] = content.encode('utf-8')
-            requests_mock.get(url, text=content)
+            requests_mock.get(url, text=content, headers=headers)
+            requests_mock.register_uri('HEAD', matcher, text=content, additional_matcher=match_request_url,
+                                       headers=bogus_content_type)
+            # requests_mock.register_uri('GET', matcher, text=content, additional_matcher=match_request_text,
+            #                            headers=headers)
     return expectations
 
 
@@ -175,23 +212,14 @@ def test_get_content(crawler, expectations):
         assert not err, "Exception should be of type TypeError"
 
 
-def test_find_img_tags(configuration, crawler, expectations):
-    image_ignore_patterns = ['theme/images/fbibannerseal.png',
-                             'images/arrow-down.svg',
-                             'images/arrow-up-stroke.svg',
-                             'images/socials/Facebook.svg',
-                             'images/socials/Twitter.svg',
-                             'images/socials/Youtube.svg',
-                             'images/socials/Instagram.svg',
-                             'images/socials/LinkedIn.svg',
-                             'images/socials/icon-Facebook.svg',
-                             'images/socials/icon-Twitter.svg',
-                             'data:image/svg+xml',
-                             ]
+def test_find_img_tags(configuration, crawler, empty_ignore_crawler, expectations):
     for url in expectations.keys():
         soup: BeautifulSoup = BeautifulSoup(crawler.get_content(url), 'html.parser')
-        img_links: List[str] = crawler.find_img_tags(soup, url, ignore=image_ignore_patterns)
+        img_links: List[str] = crawler.find_img_tags(soup, url)
         assert list(img_links) == expectations[url]['img_links'], 'img_links must match expectations'
+        img_links = list(empty_ignore_crawler.find_img_tags(soup, url))
+        assert len(img_links) > 0, 'find_img_tags must support empty ignore'
+        assert img_links[0].endswith('.png'), 'find_img_tags should have a match'
 
 
 def test_download_file(crawler, mock_images):
@@ -205,24 +233,27 @@ def test_download_file(crawler, mock_images):
             assert jpeg == mock_images[url]['content'], "file must match source content"
 
 
-def test_follow_href(crawler):
-    follow_pattern = ('wanted/ecap', 'wanted/vicap')
-    retval = crawler.follow_href('https://www.fbi.gov/wanted/ecap/unknown-individual-jane-doe-37', follow_pattern)
+def test_follow_href(crawler, empty_follow_crawler):
+    retval = crawler.follow_href('https://www.fbi.gov/wanted/ecap/unknown-individual-jane-doe-37')
     assert retval, "URL should test true"
-    retval = crawler.follow_href('https://www.fbi.gov/wanted/vicap/unknown-individual-jane-doe-37', follow_pattern)
+    retval = crawler.follow_href('https://www.fbi.gov/wanted/vicap/unknown-individual-jane-doe-37')
     assert retval, "URL should test true"
-    retval = crawler.follow_href('https://www.fbi.gov/wanted/vicap/unknown-individual-jane-doe-37', None)
+    retval = empty_follow_crawler.follow_href('https://www.fbi.gov/wanted/vicap/unknown-individual-jane-doe-37')
     assert retval, "None follow_pattern should test true"
 
-    retval = crawler.follow_href('https://www.fbi.gov/wanted/seeking-info/john-doe', follow_pattern)
+    retval = crawler.follow_href('https://www.fbi.gov/wanted/seeking-info/john-doe')
     assert not retval, "URL should test false"
-    retval = crawler.follow_href('mailto:foo@bar.com', follow_pattern)
+    retval = crawler.follow_href('mailto:foo@bar.com')
     assert not retval, "mailto: should test false"
 
 
 def test_find_a_tags(crawler: HtmlCrawler, expectations: dict):
-    follow_pattern = ('wanted/ecap', 'wanted/vicap', '/en/Crimes/Cybercrime')
     for url in expectations.keys():
         soup: BeautifulSoup = BeautifulSoup(crawler.get_content(url), 'html.parser')
-        a_tags = crawler.find_a_tags(soup, url, follow=follow_pattern)
+        a_tags = crawler.find_a_tags(soup, url)
         assert expectations[url]['a_tags'] == list(a_tags), 'a_tags must match expectations'
+
+
+def test_crawl(crawler: HtmlCrawler, expectations: dict):
+    for url in expectations.keys():
+        crawler._crawl(url)

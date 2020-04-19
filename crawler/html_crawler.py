@@ -39,13 +39,17 @@ class HtmlCrawler(Crawler):
                 and callable(subclass.find_img_tags)
                 )
 
-    def __init__(self, logger: Logger, max_depth=3, think_time=5):
+    def __init__(self, logger: Logger, render=False, ignore=[], follow_href_patterns=[], max_depth=3, think_time=5):
         super().__init__(logger)
-        mimetypes.init()
-        self._session = Session()
+        self.render = render
+        self.ignore = ignore
+        self.follow_href_patterns = follow_href_patterns
         self.max_depth = max_depth  # max recursion depth
-        self.headers = {'User-Agent': self.random_agent()}
         self.think_time = think_time
+
+        self._session = Session()
+        self.headers = {'User-Agent': self.random_agent()}
+        mimetypes.init()
 
     def init_selenium(self):
         """ Initialize selenium webdriver.
@@ -64,7 +68,6 @@ class HtmlCrawler(Crawler):
     def guess_file_extension(self, content_type: str) -> str:  # pylint: disable=R0201
         """ Guess the file extension based on MIME content-type.
         """
-        self._logger.debug("guess extension: %s", content_type)
         ext: str = mimetypes.guess_extension(content_type, strict=False)
         if not ext:
             self._logger.warning("Could not determine file extension for: %s", content_type)
@@ -109,32 +112,32 @@ class HtmlCrawler(Crawler):
         return destination
 
     @lru_cache(maxsize=1000)
-    def ignore_img(self, img_src: str, ignore: tuple) -> bool:
+    def ignore_img(self, img_src: str) -> bool:
         """ Returns true if the image source should be ignored.
         """
         matched = False
-        if ignore:
-            for ignore_pattern in ignore:
+        if self.ignore:
+            for ignore_pattern in self.ignore:
                 if ignore_pattern in img_src:
                     matched = True
                     break  # short circuit for loop
         return matched
 
-    def find_img_tags(self, soup: BeautifulSoup, url, ignore=None) -> List[str]:  # pylint: disable=R0201
+    def find_img_tags(self, soup: BeautifulSoup, url: str) -> List[str]:  # pylint: disable=R0201
         """ Find all img tags in HTML and return src attribute.
         """
         for img in soup.find_all('img'):
             src: str = img.get('src')
-            if not self.ignore_img(src, tuple(ignore)):
+            if not self.ignore_img(src):
                 yield urljoin(url, src)
 
     @lru_cache(maxsize=1000)
-    def follow_href(self, href: str, follow: tuple) -> bool:
+    def follow_href(self, href: str) -> bool:
         """ Returns true if the href should be followed.
         """
         matched = False
-        if follow:
-            for follow_pattern in follow:
+        if self.follow_href_patterns:
+            for follow_pattern in self.follow_href_patterns:
                 if href.startswith('mailto:'):  # ignore mailto links
                     break
                 if follow_pattern in href:
@@ -144,21 +147,21 @@ class HtmlCrawler(Crawler):
             matched = True
         return matched
 
-    def find_a_tags(self, soup: BeautifulSoup, url, follow=None) -> List[str]:  # pylint: disable=R0201
+    def find_a_tags(self, soup: BeautifulSoup, url: str) -> List[str]:  # pylint: disable=R0201
         """ Find all anchor tags in HTML and return href attribute.
         """
         for a in soup.find_all('a'):
             href = a.get('href')
-            if href and self.follow_href(href, follow):
+            if href and self.follow_href(href):
                 yield urljoin(url, href)
 
     @lru_cache(maxsize=100)
-    def get_content(self, url: str, render=False) -> bytes:
+    def get_content(self, url: str) -> bytes:
         """ Download and return page content.
         """
         self._logger.info("url: %s", url)
         content = None
-        if render:
+        if self.render:
             self.init_selenium()
             self._driver.get(url)
             content = self._driver.page_source
@@ -173,37 +176,39 @@ class HtmlCrawler(Crawler):
                 self._logger.info("ignored url: %s ; status_code=%s", url, head.status_code)
         return content
 
-    def _crawl(self, url: str, render=False, ignore=None, follow_href=None,
-               visited=[], img_links=set(), depth=0) -> List[str]:
+    @lru_cache(maxsize=1000)
+    def ignore_href(self, href: str):
+        """ Should the href be ignored?
+        """
+        return href.lower().startswith('javascript:') or href.endswith('.jpg') or href.endswith('.pdf') or href.endswith('.png')
+
+    def _crawl(self, url: str, visited=[], img_links=set(), depth=0) -> List[str]:
         """ Recursive crawl web site for img tags.
         """
         if url in visited or depth > self.max_depth:  # base case
             return
 
-        content = self.get_content(url, render)
+        content = self.get_content(url)
         visited.append(url)
         if content:
             soup: BeautifulSoup = BeautifulSoup(content, 'html.parser')
             # add img links to results
-            for link in self.find_img_tags(soup, url, ignore):
+            for link in self.find_img_tags(soup, url):
                 img_links.add(link)
             # discover other links on page and recurse
-            for link in self.find_a_tags(soup, url, follow_href):
-                subj = link.lower()
-                # TODO validate assumptions and make configurable
-                if not (subj.endswith('.jpg') or subj.endswith('.pdf') or subj.endswith('.png')):
-                    self._crawl(link, visited=visited, img_links=img_links, depth=depth + 1,
-                                render=render, ignore=ignore, follow_href=follow_href)
+            for link in self.find_a_tags(soup, url):
+                if not self.ignore_href(link):
+                    self._crawl(link, visited=visited, img_links=img_links, depth=depth + 1)
         return img_links
 
-    def crawl(self, urls: List[str], render=False, ignore=None, follow_href=None) -> (int, List[Exception]):
+    def crawl(self, urls: List[str]) -> (int, List[Exception]):
         """ Search the HTML for img tags.
         """
         files_downloaded = 0
         exceptions = []
         for url in urls:
             self._logger.info("url: %s", url)
-            for img_url in self._crawl(url, render=render, ignore=ignore, follow_href=follow_href):
+            for img_url in self._crawl(url):
                 try:
                     dest = self.download_file(img_url)
                     if dest:
