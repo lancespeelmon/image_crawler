@@ -10,7 +10,9 @@ from typing import List
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
-from requests import Session
+from requests import Response, Session
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -39,7 +41,8 @@ class HtmlCrawler(Crawler):
                 and callable(subclass.find_img_tags)
                 )
 
-    def __init__(self, logger: Logger, render=False, ignore=[], follow_href_patterns=[], max_depth=3, think_time=5):
+    def __init__(self, logger: Logger, render=False, ignore=[], follow_href_patterns=[], max_depth=1, think_time=10,
+                 http_retries=5, retry_backoff=5):
         super().__init__(logger)
         self.render = render
         self.ignore = ignore
@@ -49,6 +52,15 @@ class HtmlCrawler(Crawler):
 
         self._session = Session()
         self.headers = {'User-Agent': self.random_agent()}
+        retry_strategy = Retry(
+            total=http_retries,
+            backoff_factor=retry_backoff,
+            status_forcelist=[429, 500, 502, 503, 504],
+            method_whitelist=["HEAD", "GET", "OPTIONS"]
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self._session.mount("https://", adapter)
+        self._session.mount("http://", adapter)
         mimetypes.init()
 
     def init_selenium(self):
@@ -83,7 +95,7 @@ class HtmlCrawler(Crawler):
         destination = os.path.join(output, sha1_digest)
         try:
             time.sleep(random.randint(0, self.think_time))  # introduce some natural wait time
-            res = self._session.get(url, headers=self.headers, allow_redirects=True)
+            res: Response = self._session.get(url, headers=self.headers, allow_redirects=True)
             ext = self.guess_file_extension(res.headers.get('content-type'))
             metadata_file = destination + '-metadata.json'
             metadata = {
@@ -166,7 +178,7 @@ class HtmlCrawler(Crawler):
             self._driver.get(url)
             content = self._driver.page_source
         else:
-            head = self._session.head(url, headers=self.headers)
+            head: Response = self._session.head(url, headers=self.headers)
             if head.status_code == 200:
                 content_type = head.headers['content-type']
                 if 'text/html' in content_type.lower():
