@@ -98,14 +98,12 @@ class HtmlCrawler(Crawler):
                             and headers['Content-Length'] == metadata['headers']['Content-Length']
                             and path.exists(destination)
                             and (os.stat(destination)).st_size == int(headers['Content-Length'])):
-                        self._logger.info("Asset already cached locally: %s", destination)
+                        self._logger.info("cache hit: %s", destination)
                         asset_cached = True
                     else:
-                        self._logger.debug("metadata did not match!: %s\n %s", headers, metadata)
-            else:
-                self._logger.debug("metadata_file not found: %s", metadata_file)
+                        self._logger.info("cache miss: metadata did not match: %s\n %s", headers, metadata)
         except Exception as ex:
-            self._logger.error(ex)
+            self._logger.warning("cache miss: exception: %s", str(ex))
         return asset_cached
 
     def download_file(self, url: str, output='output') -> str:
