@@ -13,7 +13,6 @@ source .venv/bin/activate
 Next you can install the required python modules:
 
 ```
-pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
