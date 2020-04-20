@@ -133,7 +133,7 @@ def expectations(requests_mock: Mocker):
         },
     }
     # mock page content
-    headers = {'content-type': 'text/html; charset=utf-8'}
+    headers = {'Content-Type': 'text/html; charset=utf-8'}
     matcher = re.compile('.gov/|interpol.int/|.com/')
     for url in expectations.keys():
         requests_mock.head(url, headers=headers)
@@ -142,11 +142,10 @@ def expectations(requests_mock: Mocker):
             content = file.read()
             assert len(content) > 0, "content mock must have data"
             expectations[url]['content'] = content.encode('utf-8')
-            requests_mock.get(url, text=content, headers=headers)
-            requests_mock.register_uri('HEAD', matcher, additional_matcher=match_request_url, headers=headers)
-            requests_mock.register_uri('GET', matcher, text=content, additional_matcher=match_request_url,
-                                       headers=headers)
-            # TODO add test coverage for 429 rate limit status_code with custom matcher
+        requests_mock.get(url, text=content, headers=headers)
+        requests_mock.register_uri('HEAD', matcher, additional_matcher=match_request_url, headers=headers)
+        requests_mock.register_uri('GET', matcher, text=content, additional_matcher=match_request_url, headers=headers)
+    # TODO add test coverage for 429 rate limit status_code with custom matcher
     return expectations
 
 
@@ -159,7 +158,8 @@ def mock_images(requests_mock: Mocker):
     filename = (os.path.join(os.path.dirname(__file__), 'fixtures', '1ce559cc3fa5dfd70d914a3f083b357c474fdf63.jpg'))
     with open(filename, 'rb') as file:
         jpeg = file.read()
-        requests_mock.get(url, content=jpeg, headers={'content-type': 'image/jpeg'})
+        requests_mock.head(url, headers={'Content-Type': 'image/jpeg', 'Content-Length': '23930'})
+        requests_mock.get(url, content=jpeg, headers={'Content-Type': 'image/jpeg', 'Content-Length': '23930'})
         expectations[url] = {}
         expectations[url]['content'] = jpeg
     return expectations
@@ -223,6 +223,8 @@ def test_find_img_tags(configuration, crawler, empty_ignore_crawler, expectation
 
 
 def test_download_file(crawler, mock_images):
+    # for file in iglob(os.path.join(os.path.abspath('.'), 'output', '*')):
+    #     os.remove(file)
     for url in mock_images.keys():
         file_path = crawler.download_file(url)
         assert file_path, "file_path must be returned"
@@ -231,6 +233,7 @@ def test_download_file(crawler, mock_images):
             jpeg = file.read()
             assert len(jpeg) > 0, "file must have data"
             assert jpeg == mock_images[url]['content'], "file must match source content"
+        assert crawler.download_file(url), "Increase branch coverage"
 
 
 def test_follow_href(crawler, empty_follow_crawler):
@@ -257,3 +260,19 @@ def test_find_a_tags(crawler: HtmlCrawler, expectations: dict):
 def test_crawl(crawler: HtmlCrawler, expectations: dict):
     for url in expectations.keys():
         crawler._crawl(url)
+
+
+def test_cached(crawler: HtmlCrawler):
+    headers = {'Content-Type': 'image/jpeg', 'Content-Length': '23930'}
+    metadata_file = 'output/1ce559cc3fa5dfd70d914a3f083b357c474fdf63-metadata.json'
+    destination = 'output/1ce559cc3fa5dfd70d914a3f083b357c474fdf63.jpg'
+    assert crawler.cached(headers, metadata_file, destination), "Expect cache hit"
+
+    assert not crawler.cached(headers, metadata_file, f"{destination}.foo"), "Expect cache miss; destination not found"
+    headers = {'Content-Type': 'image/unknown', 'Content-Length': '23930'}
+    assert not crawler.cached(headers, metadata_file, destination), "Expect cache miss; Content-Type mismatch"
+    headers = {'Content-Type': 'image/jpeg', 'Content-Length': '1337'}
+    assert not crawler.cached(headers, metadata_file, destination), "Expect cache miss; Content-Length mismatch"
+    headers = {'Content-Type': 'image/unknown', 'Content-Length': '23930'}
+    assert not crawler.cached(headers, f"{metadata_file}.foo",
+                              destination), "Expect cache miss; metadata_file not found"
