@@ -6,6 +6,7 @@ import random
 import time
 from functools import lru_cache
 from logging import Logger
+from os import path
 from typing import List
 from urllib.parse import urljoin
 
@@ -78,12 +79,34 @@ class HtmlCrawler(Crawler):
         return USER_AGENTS[idx]
 
     def guess_file_extension(self, content_type: str) -> str:  # pylint: disable=R0201
-        """ Guess the file extension based on MIME content-type.
+        """ Guess the file extension based on MIME Content-Type.
         """
         ext: str = mimetypes.guess_extension(content_type, strict=False)
         if not ext:
             self._logger.warning("Could not determine file extension for: %s", content_type)
         return ext
+
+    def cached(self, headers: dict, metadata_file: str, destination: str) -> bool:
+        """ Do we already have asset in local cache?
+        """
+        asset_cached = False
+        try:
+            if path.exists(metadata_file):
+                with open(metadata_file) as file:
+                    metadata = json.load(file)
+                    if (headers['Content-Type'] == metadata['headers']['Content-Type']
+                            and headers['Content-Length'] == metadata['headers']['Content-Length']
+                            and path.exists(destination)
+                            and (os.stat(destination)).st_size == int(headers['Content-Length'])):
+                        self._logger.info("Asset already cached locally: %s", destination)
+                        asset_cached = True
+                    else:
+                        self._logger.debug("metadata did not match!: %s\n %s", headers, metadata)
+            else:
+                self._logger.debug("metadata_file not found: %s", metadata_file)
+        except Exception as ex:
+            self._logger.error(ex)
+        return asset_cached
 
     def download_file(self, url: str, output='output') -> str:
         """ Download a file from a URL to the output directory.
@@ -95,30 +118,32 @@ class HtmlCrawler(Crawler):
         destination = os.path.join(output, sha1_digest)
         try:
             time.sleep(random.randint(0, self.think_time))  # introduce some natural wait time
-            res: Response = self._session.get(url, headers=self.headers, allow_redirects=True)
-            ext = self.guess_file_extension(res.headers.get('content-type'))
+            head: Response = self._session.head(url, headers=self.headers, allow_redirects=True)
+            ext = self.guess_file_extension(head.headers.get('Content-Type'))
             metadata_file = destination + '-metadata.json'
-            metadata = {
-                'url': res.url,
-                'headers': dict(res.headers),
-                'status_code': res.status_code,
-                'elasped_micros': str(res.elapsed.microseconds),
-                'is_permanent_redirect': res.is_permanent_redirect,
-                'is_redirect': res.is_redirect,
-                'links': res.links,
-                'reason': res.reason,
-                'md5': hashlib.md5(url_encoded).hexdigest(),
-                'sha1': sha1_digest,
-                'sha256': hashlib.sha256(url_encoded).hexdigest(),
-                'sha384': hashlib.sha384(url_encoded).hexdigest(),
-                'sha512': hashlib.sha512(url_encoded).hexdigest(),
-            }
             destination = (destination + ext) if ext else destination
-            self._logger.info("write file: %s", destination)
-            with open(destination, 'wb') as file:
-                file.write(res.content)
-            with open(metadata_file, 'w') as file:
-                json.dump(metadata, file)
+            if not self.cached(dict(head.headers), metadata_file, destination):
+                res: Response = self._session.get(url, headers=self.headers, allow_redirects=True)
+                metadata = {
+                    'url': res.url,
+                    'headers': dict(res.headers),
+                    'status_code': res.status_code,
+                    'elapsed_microseconds': str(res.elapsed.microseconds),
+                    'is_permanent_redirect': res.is_permanent_redirect,
+                    'is_redirect': res.is_redirect,
+                    'links': res.links,
+                    'reason': res.reason,
+                    'md5': hashlib.md5(url_encoded).hexdigest(),
+                    'sha1': sha1_digest,
+                    'sha256': hashlib.sha256(url_encoded).hexdigest(),
+                    'sha384': hashlib.sha384(url_encoded).hexdigest(),
+                    'sha512': hashlib.sha512(url_encoded).hexdigest(),
+                }
+                self._logger.info("write file: %s", destination)
+                with open(destination, 'wb') as file:
+                    file.write(res.content)
+                with open(metadata_file, 'w') as file:
+                    json.dump(metadata, file)
         except Exception as ex:
             raise ex
         return destination
@@ -180,7 +205,7 @@ class HtmlCrawler(Crawler):
         else:
             head: Response = self._session.head(url, headers=self.headers)
             if head.status_code == 200:
-                content_type = head.headers['content-type']
+                content_type = head.headers['Content-Type']
                 if 'text/html' in content_type.lower():
                     time.sleep(random.randint(0, self.think_time))  # introduce some natural wait time
                     content = (self._session.get(url, headers=self.headers)).content

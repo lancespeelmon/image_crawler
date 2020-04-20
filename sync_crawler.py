@@ -7,7 +7,7 @@ from crawler.crawler import Crawler
 from logger.logger import get_logger
 
 LOGGER = get_logger()
-CONFIG = CrawlerConfig(LOGGER)
+CONFIG = CrawlerConfig(LOGGER, max_depth=1)
 
 
 def worker(unit: dict):
